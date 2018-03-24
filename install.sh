@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sudo apt-get install cmake libssl-dev libopencv-dev curl
+
 rm -rf restbed/
 git clone --recursive https://github.com/corvusoft/restbed.git
 mkdir restbed/build
@@ -18,6 +20,3 @@ cd live
 make
 sudo make install
 sudo ldconfig
-
-cd Server
-make all
