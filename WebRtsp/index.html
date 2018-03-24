@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<script src="bower_components/jquery/dist/jquery.min.js"></script>
+<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="bower_components/ekko-lightbox/dist/ekko-lightbox.min.js"></script>
+<script	src="bower_components/adapter.js/adapter.js"></script>
+<script src="bower_components/kurento-client/js/kurento-client.js"></script>
+<script src="bower_components/kurento-utils/js/kurento-utils.js"></script>
+<script src="./js/console.js"></script>
+<script src="./js/index.js"></script>
+</head>
+
+<body>
+<video id="videoOutput" autoplay width="1280px" height="960px"></video>
+
+
+<script>
+    function StartStream()
+    {
+        start("rtsp://78.155.199.72:8554/123", "videoOutput");
+    }
+</script>
+<button onclick="StartStream()">Start Stream</button>
+</body>
+</html>
