@@ -1,5 +1,9 @@
 # video-server
 
+Это серверная часть
+Бортовая https://github.com/roboflot-ru/video-board
+
+
 ## Установка
 
     git clone https://github.com/roboflot-ru/video-server.git video-server
@@ -87,7 +91,7 @@ PORT_OUT - исходящий порт, откуда смотрит пользо
 
 ## Трансляция
 
-Запускаем трасляцию с борта
+Запускаем трасляцию на бортовой части
 
     curl -v 'http://localhost:9009/start_live?width=640&height=480&framerate=25&bitrate=1000000&server=SERVER_HOST&port=PORT_IN'
 
@@ -96,5 +100,10 @@ PORT_OUT - исходящий порт, откуда смотрит пользо
     rtsp://SERVER_HOST:PORT_OUT/UID
 
 
+
+
+Автор: Дмитрий Кирсанов
+для БПЛА Roboflot
+https://www.roboflot.ru
 
 
