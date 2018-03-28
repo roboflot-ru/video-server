@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Live.h"
 #include "LiveReciever.h"
 
 #include <map>
@@ -21,4 +22,5 @@ private:
   int Port;
   restbed::Service WebService;
   std::map<std::string, std::shared_ptr<LiveReciever> > Recievers;
+  Live RtspLive;
 };

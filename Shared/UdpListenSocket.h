@@ -7,7 +7,7 @@ public:
   ~UdpListenSocket();
 
   void Connect();
-  unsigned Listen(unsigned char* data, unsigned size);
+  unsigned Listen(unsigned char* data, unsigned size, bool& cancelled);
 
 private:
   unsigned Port;

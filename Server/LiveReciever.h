@@ -11,7 +11,7 @@
 class LiveReciever
 {
 public:
-  LiveReciever(unsigned portIn, unsigned portOut, const std::string& uid);
+  LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid);
   ~LiveReciever();
 
 private:
@@ -25,10 +25,12 @@ private:
   bool Canceled;
   bool Started;
   LockedBuffer PayloadBuffer;
-  Live RtspLive;
+  Live& RtspLive;
   UdpListenSocket ListenSocket;
   std::thread ReceiveThread;
   std::vector<unsigned char> Header;
   std::map<unsigned, std::vector<unsigned char> > SequencedRtp;
   unsigned PrevPacketNumber;
+  unsigned PortOut;
+  const std::string Uid;
 };

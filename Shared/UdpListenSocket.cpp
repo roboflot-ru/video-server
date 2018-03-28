@@ -51,9 +51,16 @@ void UdpListenSocket::Connect()
   {
     throw std::runtime_error("failed to bind socket " + std::to_string(errno) + " " + strerror(errno) + "\n");
   }
+
+  struct timeval timeout;
+  timeout.tv_sec = 3;
+  timeout.tv_usec = 0;
+
+  setsockopt(ListenSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+  setsockopt(ListenSocket, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
 }
 
-unsigned UdpListenSocket::Listen(unsigned char* data, unsigned size)
+unsigned UdpListenSocket::Listen(unsigned char* data, unsigned size, bool& cancelled)
 {
   struct sockaddr_storage src_addr;
   socklen_t src_addr_len = sizeof(src_addr);
@@ -61,14 +68,17 @@ unsigned UdpListenSocket::Listen(unsigned char* data, unsigned size)
   while (true)
   {
     ssize_t count = recvfrom(ListenSocket, data, size, 0, (struct sockaddr*)&src_addr, &src_addr_len);
+    if (cancelled)
+    {
+      return 0;
+    }
     if (count < 0)
     {
       std::cout << "received zero buffer " << std::to_string(errno) << " " << strerror(errno) << std::endl;
       if (errno == EAGAIN)
       {
-        Connect();
+        continue;
       }
-      continue;
     }
     return count;
   }

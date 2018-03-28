@@ -2,51 +2,64 @@
 #include "H264Subsession.h"
 #include "TimeUtils.h"
 
-#include "BasicUsageEnvironment.hh"
-#include "RTSPServer.hh"
-#include "ServerMediaSession.hh"
-
 #include <iostream>
 #include <vector>
 
-Live::Live(Buffer& payloadBuffer, unsigned port, const std::string& uid)
-  : PayloadBuffer(payloadBuffer)
-  , Port(port)
+Live::Live()
 {
-  TaskScheduler* scheduler = BasicTaskScheduler::createNew();
-  UsageEnvironment* env = BasicUsageEnvironment::createNew(*scheduler);
+  Scheduler = BasicTaskScheduler::createNew();
+  Env = BasicUsageEnvironment::createNew(*Scheduler);
+}
 
-  RTSPServer* rtspServer = RTSPServer::createNew(*env, Port, NULL);
-  if (rtspServer == NULL)
+RTSPServer* Live::getRtspServer(unsigned port)
+{
+  if (Servers.count(port))
   {
-    throw std::runtime_error(std::string("Failed to create RTSP server: ") + env->getResultMsg());
+    return Servers[port];
   }
 
-  H264Subsession *h264Subsession = new H264Subsession(*env, PayloadBuffer);
-  ServerMediaSession* sms = ServerMediaSession::createNew(*env, uid.c_str(), uid.c_str(), "Drone live stream session");
-  sms->addSubsession(h264Subsession);
-  rtspServer->addServerMediaSession(sms);
+  RTSPServer* rtspServer = RTSPServer::createNew(*Env, port, NULL);
+  if (rtspServer == NULL)
+  {
+    throw std::runtime_error(std::string("Failed to create RTSP server: ") + Env->getResultMsg());
+  }
 
   if (rtspServer->setUpTunnelingOverHTTP(80) || rtspServer->setUpTunnelingOverHTTP(8000) || rtspServer->setUpTunnelingOverHTTP(8080))
   {
   }
 
-  auto eventLoop = [env]()
+  auto eventLoop = [this]()
   {
     try
     {
-      env->taskScheduler().doEventLoop();
+      Env->taskScheduler().doEventLoop();
     }
     catch (const std::exception& e)
     {
       std::cout << e.what() << std::endl;
     }
   };
-  RtspServerThread = std::thread(eventLoop);
+  std::thread(eventLoop).detach();
+  
+  Servers[port] = rtspServer;
+  return rtspServer;
+}
+
+void Live::createSession(Buffer& payloadBuffer, unsigned port, const std::string& uid)
+{
+  H264Subsession *h264Subsession = new H264Subsession(*Env, payloadBuffer);
+  ServerMediaSession* sms = ServerMediaSession::createNew(*Env, uid.c_str(), uid.c_str(), "Drone live stream session");
+  sms->addSubsession(h264Subsession);
+  getRtspServer(port)->addServerMediaSession(sms);
+}
+
+void Live::removeSession(unsigned port, const std::string& uid)
+{
+  getRtspServer(port)->removeServerMediaSession(uid.c_str());
 }
 
 Live::~Live()
 {
-  if (RtspServerThread.joinable())
-    RtspServerThread.join();
 }
+
+

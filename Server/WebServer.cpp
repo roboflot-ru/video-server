@@ -30,7 +30,7 @@ void WebServer::GetRegister(const std::shared_ptr<restbed::Session> session)
     int portIn = stoi(request->get_query_parameter("port_in"));
     int portOut = stoi(request->get_query_parameter("port_out"));
     std::string uid = request->get_query_parameter("uid");
-    Recievers[uid] = std::make_shared<LiveReciever>(portIn, portOut, uid);
+    Recievers[uid] = std::make_shared<LiveReciever>(RtspLive, portIn, portOut, uid);
     session->close(200, "{status: \"ok\"}\n");
   }
   catch (const std::exception& e)
@@ -58,5 +58,6 @@ void WebServer::Run()
   auto settings = std::make_shared<restbed::Settings>();
   settings->set_port(Port);
   settings->set_default_header("Connection", "close");
+  std::cout << "Listen http requests on port " << Port << std::endl;
   WebService.start(settings);
 }
