@@ -1,10 +1,23 @@
 ﻿#include "LiveReciever.h"
+#include "File.h"
 #include "KeyFrame.h"
+#include "MutexHolder.h"
 
 #include <iostream>
 
 // 3 sec for 1MB bitrate
 const unsigned MaxPayloadBufferSize = 3*128*1024;
+
+const std::string NoSignalFileName = "NoSignal.h264";
+
+std::vector<unsigned char> getNoSignalData()
+{
+  unsigned long size = GetFileSize(NoSignalFileName);
+  std::vector<unsigned char> result(size);
+  File f(NoSignalFileName, "r");
+  f.Read(&result[0], size);
+  return result;
+}
 
 LiveReciever::LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid)
   : Canceled(false)
@@ -15,6 +28,9 @@ LiveReciever::LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, co
   , PrevPacketNumber(0)
   , PortOut(portOut)
   , Uid(uid)
+  , NoSignalTimer(*this, 2000)
+  , NoSignal(false)
+  , NoSignalData(getNoSignalData())
 {
   RtspLive.createSession(PayloadBuffer, portOut, uid);
   ListenSocket.Connect();
@@ -100,6 +116,9 @@ void LiveReciever::SendIfPossible()
 
 void LiveReciever::WriteNextPacket(unsigned char* data, unsigned size)
 {
+  NoSignalTimer.Reset();
+  NoSignal = false;
+  MutexHolder holder(Mutex);
   if (isKeyFrame(data))
   {
     if (PayloadBuffer.GetDataSize() > MaxPayloadBufferSize)
@@ -122,4 +141,20 @@ void LiveReciever::StoreHeader(const unsigned char* data, unsigned size)
 {
   Header.resize(size);
   memcpy(&Header[0], data, size);
+}
+
+void LiveReciever::operator()()
+{
+  MutexHolder holder(Mutex);
+  NoSignal = true;
+  while (PayloadBuffer.GetDataSize() != 0 && NoSignal)
+  {
+    usleep(10);
+  }
+
+  if (NoSignal)
+  {
+    PayloadBuffer.Add(&NoSignalData[0], NoSignalData.size());
+    std::cout << "Write no signal data. " << NoSignalData.size() << std::endl;
+  }
 }

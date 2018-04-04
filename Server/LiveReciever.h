@@ -2,9 +2,11 @@
 
 #include "Live.h"
 #include "LockedBuffer.h"
+#include "Timer.h"
 #include "UdpListenSocket.h"
 
 #include <map>
+#include <mutex> 
 #include <thread>
 #include <vector>
 
@@ -13,6 +15,8 @@ class LiveReciever
 public:
   LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid);
   ~LiveReciever();
+
+  void operator()();
 
 private:
   void ReceiveThreadFunc();
@@ -33,4 +37,8 @@ private:
   unsigned PrevPacketNumber;
   unsigned PortOut;
   const std::string Uid;
+  Timer<LiveReciever> NoSignalTimer;
+  bool NoSignal;
+  std::vector<unsigned char> NoSignalData;
+  std::mutex Mutex;
 };
