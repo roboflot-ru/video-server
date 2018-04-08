@@ -3,8 +3,9 @@
 #include <functional>
 #include <iostream>
 
-WebServer::WebServer(int port)
+WebServer::WebServer(int port, const std::string& noSignalPath)
   : Port(port)
+  , NoSignalPath(noSignalPath)
 {
   auto registerResource = std::make_shared<restbed::Resource>();
   registerResource->set_path("/register");
@@ -26,11 +27,12 @@ void WebServer::GetRegister(const std::shared_ptr<restbed::Session> session)
 {
   try
   {
+    CheckLocalRequest(session);
     auto request = session->get_request();
     int portIn = stoi(request->get_query_parameter("port_in"));
     int portOut = stoi(request->get_query_parameter("port_out"));
     std::string uid = request->get_query_parameter("uid");
-    Recievers[uid] = std::make_shared<LiveReciever>(RtspLive, portIn, portOut, uid);
+    Recievers[uid] = std::make_shared<LiveReciever>(RtspLive, portIn, portOut, uid, NoSignalPath);
     session->close(200, "{status: \"ok\"}\n");
   }
   catch (const std::exception& e)
@@ -42,6 +44,7 @@ void WebServer::GetRegister(const std::shared_ptr<restbed::Session> session)
 
 void WebServer::GetUnregister(const std::shared_ptr<restbed::Session> session)
 {
+  CheckLocalRequest(session);
   auto request = session->get_request();
   std::string uid = request->get_query_parameter("uid");
   Recievers.erase(uid);
@@ -50,7 +53,33 @@ void WebServer::GetUnregister(const std::shared_ptr<restbed::Session> session)
 
 void WebServer::GetStatus(const std::shared_ptr<restbed::Session> session)
 {
+  CheckLocalRequest(session);
   session->close(200, "{status: \"ok\"}\n");
+}
+
+void WebServer::CheckLocalRequest(const std::shared_ptr<restbed::Session> session)
+{
+  auto origin = session->get_origin();
+  auto prefix = origin.find("::ffff:");
+  auto bracket = origin.find("]");
+  if (prefix != std::string::npos && bracket != std::string::npos)
+  {
+    auto start = prefix + sizeof("::ffff:") - 1;
+    auto ip = origin.substr(start, bracket - start);
+    if (ip == "localhost" || ip == "127.0.0.1")
+    {
+      return;
+    }
+    std::cout << "ip " << ip << std::endl;
+  }
+
+  if (origin.find("::1") != std::string::npos)
+  {
+    return;
+  }
+
+  std::cout << "Allowed only local requests " << origin << std::endl;
+  throw std::runtime_error("Allowed only local requests");
 }
 
 void WebServer::Run()

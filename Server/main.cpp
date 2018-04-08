@@ -10,8 +10,9 @@ int main(int argc, char **argv)
     Config config;
 
     int httpServerPort = config.GetInt("common", "http_server_port");
+    std::string noSignalPath = config.GetString("common", "no_signal_path");
     
-    WebServer webServer(httpServerPort);
+    WebServer webServer(httpServerPort, noSignalPath);
     webServer.Run();
   }
   catch (const std::exception& e)

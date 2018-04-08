@@ -13,7 +13,7 @@
 class LiveReciever
 {
 public:
-  LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid);
+  LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid, const std::string& noSignalPath);
   ~LiveReciever();
 
   void operator()();

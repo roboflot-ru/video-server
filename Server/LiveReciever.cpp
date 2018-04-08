@@ -8,18 +8,16 @@
 // 3 sec for 1MB bitrate
 const unsigned MaxPayloadBufferSize = 3*128*1024;
 
-const std::string NoSignalFileName = "NoSignal.h264";
-
-std::vector<unsigned char> getNoSignalData()
+std::vector<unsigned char> getNoSignalData(const std::string& noSignalPath)
 {
-  unsigned long size = GetFileSize(NoSignalFileName);
+  unsigned long size = GetFileSize(noSignalPath);
   std::vector<unsigned char> result(size);
-  File f(NoSignalFileName, "r");
+  File f(noSignalPath, "r");
   f.Read(&result[0], size);
   return result;
 }
 
-LiveReciever::LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid)
+LiveReciever::LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, const std::string& uid, const std::string& noSignalPath)
   : Canceled(false)
   , Started(false)
   , PayloadBuffer(MaxPayloadBufferSize)
@@ -30,7 +28,7 @@ LiveReciever::LiveReciever(Live& rtspLive, unsigned portIn, unsigned portOut, co
   , Uid(uid)
   , NoSignalTimer(*this, 2000)
   , NoSignal(false)
-  , NoSignalData(getNoSignalData())
+  , NoSignalData(getNoSignalData(noSignalPath))
 {
   RtspLive.createSession(PayloadBuffer, portOut, uid);
   ListenSocket.Connect();
